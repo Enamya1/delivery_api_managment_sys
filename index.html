@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Worker Tracker</title>
+</head>
+<body>
+    <h1>Delivery Worker Tracker</h1>
+
+    <h2>Add Worker</h2>
+    <form id="worker-form">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required><br><br>
+
+        <label for="status">Status:</label>
+        <input type="text" id="status" name="status" required><br><br>
+
+        <label for="location">Location:</label>
+        <input type="text" id="location" name="location" required><br><br>
+
+        <button type="submit">Add Worker</button>
+    </form>
+
+    <h2>Track Worker by ID</h2>
+    <label for="track-id">Worker ID:</label>
+    <input type="text" id="track-id" name="track-id" required>
+    <button onclick="trackWorker()">Track</button>
+
+    <h3>Worker Status</h3>
+    <div id="worker-status"></div>
+
+    <h2>Update Worker Status & Location</h2>
+    <form id="update-worker-form">
+        <label for="update-id">Worker ID:</label>
+        <input type="text" id="update-id" name="update-id" required><br><br>
+
+        <label for="update-status">Status:</label>
+        <input type="text" id="update-status" name="update-status" required><br><br>
+
+        <label for="update-location">Location:</label>
+        <input type="text" id="update-location" name="update-location" required><br><br>
+
+        <button type="submit">Update Worker</button>
+    </form>
+
+    <h2>Worker List</h2>
+    <ul id="workers-list"></ul>
+
+    <script>
+        // Add worker
+        document.getElementById('worker-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const status = document.getElementById('status').value;
+            const location = document.getElementById('location').value;
+
+            fetch('http://127.0.0.1:5000/worker', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, status, location })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                getWorkers();  // Refresh the worker list after adding
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        // Track worker by ID
+        function trackWorker() {
+            const workerId = document.getElementById('track-id').value;
+            fetch(`http://127.0.0.1:5000/track-worker/${workerId}`)
+            .then(response => response.json())
+            .then(data => {
+                const workerStatusDiv = document.getElementById('worker-status');
+                if (data.message) {
+                    workerStatusDiv.textContent = data.message;
+                } else {
+                    workerStatusDiv.textContent = `Name: ${data.name}, Status: ${data.status}, Location: ${data.location}`;
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Update worker status and location
+        document.getElementById('update-worker-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('update-id').value;
+            const status = document.getElementById('update-status').value;
+            const location = document.getElementById('update-location').value;
+
+            fetch('http://127.0.0.1:5000/update-worker', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id, status, location })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                trackWorker();  // Refresh the worker's status after updating
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        // Get workers and display
+        function getWorkers() {
+            fetch('http://127.0.0.1:5000/workers')
+            .then(response => response.json())
+            .then(data => {
+                const workersList = document.getElementById('workers-list');
+                workersList.innerHTML = '';
+                data.forEach(worker => {
+                    const li = document.createElement('li');
+                    li.textContent = `ID: ${worker.id}, Name: ${worker.name}, Status: ${worker.status}, Location: ${worker.location}`;
+                    workersList.appendChild(li);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Call to get workers initially
+        getWorkers();
+    </script>
+</body>
+</html>
